@@ -1,20 +1,21 @@
-const int max = 100;
+const int max = 500;
+
 void main()
 {
 	int i, j, k;
-	int rem, prime;
+	int rem, sum;
 
 	i = 2;
 	while (i <= max) {
-		prime = 1;
+		sum = 0;
 		k = i / 2;
-		j = 2;
+		j = 1;
 		while (j <= k) {
 			rem = i % j;
-			if (rem == 0) prime = 0;
+			if (rem == 0) sum += j;
 			++j;
 		}
-		if (prime == 1) write(i);
+		if (i == sum) write(i);
 		++i;
 	}
 }
