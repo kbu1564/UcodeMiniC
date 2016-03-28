@@ -111,7 +111,7 @@ public:
      int pop() ;
      int top() { return sp; }
      void spSet(int n) {sp = n;}
-	 void dump();
+     void dump();
      int& operator[](int);
      UcodeiStack(int) ; 
      ~UcodeiStack() { delete[] stackArray; }

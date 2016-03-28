@@ -1,0 +1,118 @@
+main       proc 105 2 2
+           sym 2 1 100
+           sym 2 101 1
+           sym 2 102 1
+           sym 2 103 1
+           sym 2 104 1
+           sym 2 105 1
+           ldc 1
+           str 2 103
+           ldp
+           lda 2 101
+           call read
+$$1        nop
+           lod 2 101
+           ldc 0
+           eq
+           tjp $$2
+           lod 2 103
+           lda 2 1
+           add
+           lod 2 101
+           sti
+           ldp
+           lod 2 103
+           inc
+           str 2 103
+           ldp
+           lda 2 101
+           call read
+           ujp $$1
+$$2        nop
+           lod 2 103
+           ldc 1
+           sub
+           dup
+           str 2 102
+           str 2 104
+$$3        nop
+           ldc 1
+           lod 2 104
+           gt
+           tjp $$6
+           ldc 1
+           str 2 103
+$$4        nop
+           lod 2 104
+           lod 2 103
+           lt
+           tjp $$5
+$$41       nop
+           lod 2 103
+           lda 2 1
+           add
+           ldi
+           lod 2 103
+           ldc 1
+           add
+           lda 2 1
+           add
+           ldi
+           gt
+           fjp $$42
+           lod 2 103
+           lda 2 1
+           add
+           ldi
+           str 2 105
+           lod 2 103
+           lda 2 1
+           add
+           lod 2 103
+           ldc 1
+           add
+           lda 2 1
+           add
+           ldi
+           sti
+           lod 2 103
+           ldc 1
+           add
+           lda 2 1
+           add
+           lod 2 105
+           sti
+$$42       nop
+           lod 2 103
+           inc
+           str 2 103
+           ujp $$4
+$$5        nop
+           lod 2 104
+           dec
+           str 2 104
+           ujp $$3
+$$6        nop
+           ldc 1
+           str 2 103
+$$7        nop
+           lod 2 102
+           lod 2 103
+           lt
+           tjp $$8
+           lod 2 103
+           inc
+           str 2 103
+           ldp
+           lod 2 103
+           lda 2 1
+           add
+           ldi
+           call write
+           ujp $$7
+$$8        nop
+           end
+           bgn 0
+           ldp
+           call main
+           end
