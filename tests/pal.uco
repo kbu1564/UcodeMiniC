@@ -1,4 +1,4 @@
-main       proc 105 2 2
+main       proc 4 2 2
            sym 2 1 1
            sym 2 2 1
            sym 2 3 1
@@ -47,7 +47,8 @@ $$end      nop
            ldp
            lod 2 1
            call write
-$$exit     end
+$$exit     retv
+           end
            bgn 0
            ldp
            call main

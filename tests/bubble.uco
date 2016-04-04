@@ -111,6 +111,7 @@ $$7        nop
            call write
            ujp $$7
 $$8        nop
+           retv
            end
            bgn 0
            ldp

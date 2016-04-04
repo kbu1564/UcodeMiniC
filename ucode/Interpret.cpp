@@ -222,16 +222,23 @@ void Interpret::execute(int startAddr)
         stack.push(temp);
         break;
       case ldp:
+        // 함수 정보 저장용 공간 3칸 확보
         parms = stack.top() + 1;    // save sp
         stack.spSet(stack.top()+4); // set a frame
         break;
       case call:
         if ((temp=instrBuf[pc].value1) < 0) predefinedProc(temp);
         else {
-          stack[parms+2] = pc + 1;
-          stack[parms+1] = arBase;
-          arBase = parms;
-          pc = instrBuf[pc].value1 - 1;
+					// param : func parameter stack pointer
+					// set up param value in `ldp` inst
+          stack[parms+2] = pc + 1; // return base address
+
+          // linked list 방식으로 관리중인 before pointer 셋팅
+          stack[parms+1] = arBase; // func stack information
+          arBase = parms; // next func call index
+
+          // 이 부분이 실제로 함수 코드로 점프하는 부분
+          pc = instrBuf[pc].value1 - 1; // pc = func code address
         }
         break;
       case retv:
@@ -257,12 +264,18 @@ void Interpret::execute(int startAddr)
         // value 1: (size of paras  size of local vars)
         // value 2: block number(base)
         // value 3: static level => lexical level (static chain)
+        // 함수에서 사용 할 메모리 공간 확보
         stack.spSet(arBase + instrBuf[pc].value1 + 3);
+        // 함수에서 사용하는 메모리 공간의 고유 키값 셋팅 : block number
+        // 만약 이 값이 서로 같은 함수가 존재한다면 서로의 공간을 공유한다.
         stack[arBase+3] = instrBuf[pc].value2;
+
+        // lexical level : innerBlock 을 처리하기위한 용도로 현재 쓰이진 않음
         for (temp = stack[arBase+1];
              stack[temp+3] != instrBuf[pc].value3 -1;
              temp = stack[temp]);
-
+				// innerBlock 을 처리하기 위한 부모 Block Address
+        // 이 또한 내부적으로 linked list 자료구조를 사용
         stack[arBase] = temp;
         break;
       case endop:
