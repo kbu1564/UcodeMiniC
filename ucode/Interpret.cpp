@@ -229,8 +229,8 @@ void Interpret::execute(int startAddr)
       case call:
         if ((temp=instrBuf[pc].value1) < 0) predefinedProc(temp);
         else {
-					// param : func parameter stack pointer
-					// set up param value in `ldp` inst
+          // param : func parameter stack pointer
+          // set up param value in `ldp` inst
           stack[parms+2] = pc + 1; // return base address
 
           // linked list 방식으로 관리중인 before pointer 셋팅
@@ -274,7 +274,7 @@ void Interpret::execute(int startAddr)
         for (temp = stack[arBase+1];
              stack[temp+3] != instrBuf[pc].value3 -1;
              temp = stack[temp]);
-				// innerBlock 을 처리하기 위한 부모 Block Address
+        // innerBlock 을 처리하기 위한 부모 Block Address
         // 이 또한 내부적으로 linked list 자료구조를 사용
         stack[arBase] = temp;
         break;

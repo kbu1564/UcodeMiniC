@@ -8,14 +8,30 @@ main       proc 2 2 2
            lod 2 1
            call write
            ldp
-           lda 2 1
+           lod 2 1
            call factorial
            str 2 2
            ldp
            lod 2 2
            call write
            end
-factorial  proc 1 2 
+factorial  proc 1 2 3
+           sym 2 1 1
+           lod 2 1
+           ldc 1
+           eq
+           fjp $$1
+           ldc 1
+           retv
+$$1        nop
+           lod 2 1
+           ldp
+           lod 2 1
+           ldc 1
+           sub
+           call factorial
+           mult
+           retv
            end
            bgn 0
            ldp
