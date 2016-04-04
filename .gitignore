@@ -22,7 +22,10 @@
 *.a
 *.lib
 
+*.lst
+
 # Executables
 *.exe
 *.out
 *.app
+tests/ucode
