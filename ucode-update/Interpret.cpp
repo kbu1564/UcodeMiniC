@@ -21,8 +21,8 @@ int Interpret::findAddr(int n)
 
   for (temp = arBase; instrBuf[n].value1 != stack[temp+3]; temp = stack[temp]) {
     if ((temp > STACKSIZE) || (temp < 0 ))
-    cout << "Lexical level :  " << instrBuf[n].value1 << ' ' 
-         << "Offset        :  " << instrBuf[n].value2 << '\n';
+      cout << "Lexical level :  " << instrBuf[n].value1 << ' ' 
+           << "Offset        :  " << instrBuf[n].value2 << '\n';
   }
 
   return (temp + instrBuf[n].value2 + 3);
@@ -261,18 +261,17 @@ void Interpret::execute(int startAddr)
         break;
       */
       case proc:
-        // value 1: (size of paras  size of local vars)
-        // value 2: block number(base)
-        // value 3: static level => lexical level (static chain)
+        // value 1: block number(base)
+        // value 2: static level => lexical level (static chain)
         // 함수에서 사용 할 메모리 공간 확보
-        stack.spSet(arBase + instrBuf[pc].value1 + 3);
+        stack.spSet(arBase + 3);
         // 함수에서 사용하는 메모리 공간의 고유 키값 셋팅 : block number
         // 만약 이 값이 서로 같은 함수가 존재한다면 서로의 공간을 공유한다.
-        stack[arBase+3] = instrBuf[pc].value2;
+        stack[arBase+3] = instrBuf[pc].value1;
 
         // lexical level : innerBlock 을 처리하기위한 용도로 현재 쓰이진 않음
         for (temp = stack[arBase+1];
-             stack[temp+3] != instrBuf[pc].value3 -1;
+             stack[temp+3] != instrBuf[pc].value2 -1;
              temp = stack[temp]);
         // innerBlock 을 처리하기 위한 부모 Block Address
         // 이 또한 내부적으로 linked list 자료구조를 사용
@@ -286,12 +285,16 @@ void Interpret::execute(int startAddr)
         break;
       /*
       case ones:
-        temp = stack.pop();
-        stack.push(~temp);
+        stack.push(~stack.pop());
         break;
       */
       case nop:
+        break;
       case sym:
+        // 함수에서 사용할 메모리 공간 확보
+        stack.spSet(stack.top() + instrBuf[pc].value2);
+        //instrBuf[pc].value1 // block number
+        //instrBuf[pc].value2 // size
         break;
       /* augmented operation code */
       case incop:

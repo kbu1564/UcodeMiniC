@@ -112,7 +112,6 @@ void Assemble::assemble()
     case proc:
       instrBuf[instrCnt].value1 = getOperand();
       instrBuf[instrCnt].value2 = getOperand();
-      instrBuf[instrCnt].value3 = getOperand();
       break;
     case bgn:
       instrBuf[instrCnt].value1 = getOperand();
