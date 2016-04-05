@@ -4,7 +4,8 @@
 #include "ArithmeticLogicUnit.h"
 #include "Interpret.h"
 
-Interpret::Interpret() : sysStack(STACKSIZE), memStack(STACKSIZE)
+Interpret::Interpret()
+  : sysStack(STACKSIZE), memStack(STACKSIZE), callStack(STACKSIZE)
 {
   arBase = 4;
   tcycle = 0;
@@ -103,7 +104,7 @@ void Interpret::execute(int startAddr)
     // 디버깅용 총 사이클수(소모된 클럭수) 측정용
     dynamicCnt[ir.opcode]++;
     if (executable[ir.opcode]) exeCount++;
-    tcycle = opcodeCycle[ir.opcode];
+    tcycle += opcodeCycle[ir.opcode];
 
     //cout << opcodeName[ir.opcode] << "  = " << memStack.top() << endl;
     // instruction execution
@@ -114,7 +115,7 @@ void Interpret::execute(int startAddr)
           predefinedProc(temp);
         } else {
           // return base address
-          memStack.push(pc + 1);
+          callStack.push(pc + 1);
           //memStack.store();
           // 이 부분이 실제로 함수 코드로 점프하는 부분
           pc = ir.value1 - 1;
@@ -130,13 +131,9 @@ void Interpret::execute(int startAddr)
         // 만약 이 값이 서로 같은 함수가 존재한다면 서로의 공간을 공유한다.
         sysStack[arBase+3] = ir.value1;
         break;
-      case retv:
-        temp = memStack.pop();
-        pc = memStack.pop()-1;
-        memStack.push(temp);
-        break;
       case ret:
-        pc = memStack.pop()-1;
+      case retv:
+        pc = callStack.pop()-1;
         break;
       case sym:
         // 함수에서 사용할 메모리 공간 확보

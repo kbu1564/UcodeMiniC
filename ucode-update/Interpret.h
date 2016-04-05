@@ -5,6 +5,7 @@ class Interpret {
   ArithmeticLogicUnit alu;
   Instruction ir;
 
+  UcodeiStack callStack;
   UcodeiStack sysStack;
   UcodeiStack memStack;
   int arBase;
