@@ -112,9 +112,6 @@ void Interpret::execute(int startAddr)
         if ((temp = ir.value1) < 0) {
           // call assembly functions
           predefinedProc(temp);
-          // jump return address
-          //memStack.restore();
-          //pc = memStack.pop();
         } else {
           // return base address
           memStack.push(pc + 1);
@@ -135,11 +132,11 @@ void Interpret::execute(int startAddr)
         break;
       case retv:
         temp = memStack.pop();
+        pc = memStack.pop()-1;
+        memStack.push(temp);
+        break;
       case ret:
-        //memStack.restore();
-        pc = memStack.pop();
-        if (ir.opcode == retv)
-          memStack.push(temp);
+        pc = memStack.pop()-1;
         break;
       case sym:
         // 함수에서 사용할 메모리 공간 확보

@@ -49,7 +49,7 @@ $$end      nop
            lod 2 1
            call write
 $$exit     nop
-           retv
+           ret
            end
            bgn 0
            call main
