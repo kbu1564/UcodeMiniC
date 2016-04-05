@@ -35,30 +35,13 @@ void Interpret::predefinedProc(int procIndex)
 
   // read
   if (procIndex == READPROC) {
-    /*
-    char dataFileName[20];
-    static ifstream dataFile;
-    static int readFirst = TRUE;
-    if (readFirst) {
-      cout << "\nEnter Data File Name : ";
-      cin >> dataFileName;
-      dataFile.open(dataFileName, ios::in);
-      if (dataFileName == NULL)
-        errmsg("checkPredefined()", "Data file open error ...");
-      readFirst = FALSE;
-    }
-    dataFile >> data;
-    */
     cin >> data;
     temp = memStack.pop();
     sysStack[temp] = data;
-    //sysStack.spSet(sysStack.top()-4);
   } else if (procIndex == WRITEPROC) { // write
-    //temp = memStack[memStack.pop()];
     temp = memStack.pop();
     cout << ' ' << temp;
     outputFile << ' ' << temp;
-    //sysStack.spSet(sysStack.top()-4);
   } else if (procIndex == LFPROC) { // lf : line feed
     outputFile.put('\n');
     cout << "\n";
@@ -139,18 +122,6 @@ void Interpret::execute(int startAddr)
           // 이 부분이 실제로 함수 코드로 점프하는 부분
           pc = ir.value1 - 1;
           arBase = sysStack.top() + 1;
-          /*
-          // param : func parameter stack pointer
-          // set up param value in `ldp` inst
-          sysStack[parms+2] = pc + 1; // return base address
-
-          // linked list 방식으로 관리중인 before pointer 셋팅
-          sysStack[parms+1] = arBase; // func stack information
-          arBase = parms; // next func call index
-
-          // 이 부분이 실제로 함수 코드로 점프하는 부분
-          pc = ir.value1 - 1; // pc = func code address
-          */
         }
         break;
       case proc:
@@ -161,49 +132,15 @@ void Interpret::execute(int startAddr)
         // 함수에서 사용하는 메모리 공간의 고유 키값 셋팅 : block number
         // 만약 이 값이 서로 같은 함수가 존재한다면 서로의 공간을 공유한다.
         sysStack[arBase+3] = ir.value1;
-
-        /*
-        // lexical level : innerBlock 을 처리하기위한 용도로 현재 쓰이진 않음
-        for (temp = sysStack[arBase+1];
-             sysStack[temp+3] != ir.value2 -1;
-             temp = sysStack[temp]);
-        // innerBlock 을 처리하기 위한 부모 Block Address
-        // 이 또한 내부적으로 linked list 자료구조를 사용
-        sysStack[arBase] = temp;
-        */
         break;
-      /*
-      case ldp:
-        // 함수 정보 저장용 공간 4칸 확보
-        parms = sysStack.top() + 1;
-        sysStack.spSet(sysStack.top()+4);
-        break;
-      */
       case retv:
         temp = memStack.pop();
       case ret:
-        /*
-        sysStack.spSet(arBase - 1);
-        if (ir.opcode == retv)
-          sysStack.push(temp);
-        pc = sysStack[arBase+2] - 1;
-        arBase = sysStack[arBase+1];
-        */
         //memStack.restore();
         pc = memStack.pop();
         if (ir.opcode == retv)
           memStack.push(temp);
         break;
-      /*
-      case stp:
-        returnAddress = sysStack[arBase+2] - 1;
-        sysStack.spSet(arBase - 1);
-        arBase = sysStack[arBase  1];
-        break;
-      case ret:
-        pc = returnAddress;
-        break;
-      */
       case sym:
         // 함수에서 사용할 메모리 공간 확보
         sysStack.spSet(sysStack.top() + ir.value2);
@@ -287,6 +224,7 @@ void Interpret::execute(int startAddr)
       case fjp:
         if (!memStack.pop()) pc = ir.value1 - 1;
         break;
+
       case endop:
         pc = -2;
         break;
