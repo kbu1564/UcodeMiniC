@@ -12,6 +12,7 @@
 #include "Label.h"
 #include "UcodeiStack.h"
 #include "Assemble.h"
+#include "ArithmeticLogicUnit.h"
 #include "Interpret.h"
 
 const char* opcodeName[NO_OPCODES] = {

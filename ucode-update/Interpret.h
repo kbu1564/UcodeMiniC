@@ -2,7 +2,11 @@
 #define __INTERPRET_H
 
 class Interpret {
-  UcodeiStack stack;
+  ArithmeticLogicUnit alu;
+  Instruction ir;
+
+  UcodeiStack sysStack;
+  UcodeiStack memStack;
   int arBase;
   long int tcycle;
   long int exeCount;

@@ -1,9 +1,10 @@
 #include "Ucodei.h"
 #include "Label.h"
 #include "UcodeiStack.h"
+#include "ArithmeticLogicUnit.h"
 #include "Interpret.h"
 
-Interpret::Interpret() : stack(STACKSIZE)
+Interpret::Interpret() : sysStack(STACKSIZE), memStack(STACKSIZE)
 {
   arBase = 4;
   tcycle = 0;
@@ -19,7 +20,7 @@ int Interpret::findAddr(int n)
   else if (instrBuf[n].value2 < 1) 
     errmsg("findAddr()", "Negative offset ...");
 
-  for (temp = arBase; instrBuf[n].value1 != stack[temp+3]; temp = stack[temp]) {
+  for (temp = arBase; instrBuf[n].value1 != sysStack[temp+3]; temp = sysStack[temp]) {
     if ((temp > STACKSIZE) || (temp < 0 ))
       cout << "Lexical level :  " << instrBuf[n].value1 << ' ' 
            << "Offset        :  " << instrBuf[n].value2 << '\n';
@@ -30,15 +31,14 @@ int Interpret::findAddr(int n)
 
 void Interpret::predefinedProc(int procIndex)
 {
-  static ifstream dataFile;
-  static int readFirst = TRUE;
-
-  // char dataFileName[20];
   int data, temp;
 
   // read
   if (procIndex == READPROC) {
     /*
+    char dataFileName[20];
+    static ifstream dataFile;
+    static int readFirst = TRUE;
     if (readFirst) {
       cout << "\nEnter Data File Name : ";
       cin >> dataFileName;
@@ -50,14 +50,15 @@ void Interpret::predefinedProc(int procIndex)
     dataFile >> data;
     */
     cin >> data;
-    temp = stack.pop();
-    stack[temp] = data;
-    stack.spSet(stack.top()-4);
+    temp = memStack.pop();
+    sysStack[temp] = data;
+    //sysStack.spSet(sysStack.top()-4);
   } else if (procIndex == WRITEPROC) { // write
-    temp = stack.pop();
+    //temp = memStack[memStack.pop()];
+    temp = memStack.pop();
     cout << ' ' << temp;
-    outputFile << ' ' << temp ;
-    stack.spSet(stack.top()-4);
+    outputFile << ' ' << temp;
+    //sysStack.spSet(sysStack.top()-4);
   } else if (procIndex == LFPROC) { // lf : line feed
     outputFile.put('\n');
     cout << "\n";
@@ -112,208 +113,189 @@ void Interpret::execute(int startAddr)
   cout << " == Executing ...  ==\n";
   cout << " == Result         ==\n";
   while (pc >= 0) {
-    dynamicCnt[instrBuf[pc].opcode]++;
-    if (executable[instrBuf[pc].opcode]) exeCount++;
-    tcycle = opcodeCycle[instrBuf[pc].opcode];
-    switch(instrBuf[pc].opcode) {
-      case notop:
-        stack.push(!stack.pop());
-        break;
-      case neg:
-        stack.push(-stack.pop());
-        break;
-      case add:
-        stack.push(stack.pop()+stack.pop());
-        break;
-      case divop:
-        temp = stack.pop();
-        if (temp == 0) errmsg("execute()", "Divide by Zero ...");
-        stack.push(stack.pop()/temp);
-        break;
-      case sub:
-        temp = stack.pop();
-        stack.push(stack.pop()-temp);
-        break;
-      case mult:
-        stack.push(stack.pop()*stack.pop());
-        break;
-      case modop:
-        temp = stack.pop();
-        stack.push(stack.pop()%temp);
-        break;
-      case andop:
-        stack.push(stack.pop() & stack.pop());
-        break;
-      case orop:
-        stack.push(stack.pop() | stack.pop());
-        break;
-      case gt:
-        temp = stack.pop();
-        stack.push(stack.pop()>temp);
-        break;
-      case lt:
-        temp = stack.pop();
-        stack.push(stack.pop()<temp);
-        break;
-      case ge:
-        temp = stack.pop();
-        stack.push(stack.pop()>=temp);
-        break;
-      case le:
-        temp = stack.pop();
-        stack.push(stack.pop()<=temp);
-        break;
-      case eq:
-        temp = stack.pop();
-        stack.push(stack.pop()==temp);
-        break;
-      case ne:
-        temp = stack.pop();
-        stack.push(stack.pop()!=temp);
-        break;
-      case swp:
-        temp = stack.pop();
-        temp1 = stack.pop();
-        stack.push(temp);
-        stack.push(temp1);
-        break;
-      case lod:
-        stack.push(stack[findAddr(pc)]);
-        break;
-      case ldc:
-        stack.push(instrBuf[pc].value1);
-        break;
-      case lda:
-        stack.push(findAddr(pc));
-        break;
-      case str:
-        stack[findAddr(pc)] = stack.pop();
-        break;
-      case ldi:
-        if ((stack.top() <= 0) || (stack.top() > STACKSIZE))
-          errmsg("execute()", "Illegal ldi instruction ...");
-        temp = stack.pop();
-        stack.push(temp);
-        stack[stack.top()] = stack[temp];
-        break;
-      case sti:
-        temp = stack.pop();
-        stack[stack.pop()] = temp;
-        break;
-      case ujp:
-        pc = instrBuf[pc].value1 - 1;
-        break;
-      case tjp:
-        if (stack.pop()) pc = instrBuf[pc].value1 - 1;
-        break;
-      case fjp:
-        if (!stack.pop()) pc = instrBuf[pc].value1 - 1;
-        break;
-      case chkh:
-        temp = stack.pop();
-        if (temp > instrBuf[pc].value1)
-          errmsg("execute()", "High check failed...");
-        stack.push(temp);
-        break;
-      case chkl:
-        temp = stack.pop();
-        if (temp < instrBuf[pc].value1)
-          errmsg("execute()", "Low check failed...");
-        stack.push(temp);
-        break;
-      case ldp:
-        // 함수 정보 저장용 공간 3칸 확보
-        parms = stack.top() + 1;    // save sp
-        stack.spSet(stack.top()+4); // set a frame
-        break;
+    // Instruction Register
+    Instruction ir = instrBuf[pc];
+
+    // 명령어당 사용량
+    // 디버깅용 총 사이클수(소모된 클럭수) 측정용
+    dynamicCnt[ir.opcode]++;
+    if (executable[ir.opcode]) exeCount++;
+    tcycle = opcodeCycle[ir.opcode];
+
+    //cout << opcodeName[ir.opcode] << "  = " << memStack.top() << endl;
+    // instruction execution
+    switch(ir.opcode) {
       case call:
-        if ((temp=instrBuf[pc].value1) < 0) predefinedProc(temp);
-        else {
+        if ((temp = ir.value1) < 0) {
+          // call assembly functions
+          predefinedProc(temp);
+          // jump return address
+          //memStack.restore();
+          //pc = memStack.pop();
+        } else {
+          // return base address
+          memStack.push(pc + 1);
+          //memStack.store();
+          // 이 부분이 실제로 함수 코드로 점프하는 부분
+          pc = ir.value1 - 1;
+          arBase = sysStack.top() + 1;
+          /*
           // param : func parameter stack pointer
           // set up param value in `ldp` inst
-          stack[parms+2] = pc + 1; // return base address
+          sysStack[parms+2] = pc + 1; // return base address
 
           // linked list 방식으로 관리중인 before pointer 셋팅
-          stack[parms+1] = arBase; // func stack information
+          sysStack[parms+1] = arBase; // func stack information
           arBase = parms; // next func call index
 
           // 이 부분이 실제로 함수 코드로 점프하는 부분
-          pc = instrBuf[pc].value1 - 1; // pc = func code address
+          pc = ir.value1 - 1; // pc = func code address
+          */
         }
         break;
+      case proc:
+        // value 1: block number(base)
+        // value 2: static level => lexical level (static chain)
+        // 함수에서 사용 할 메모리 공간 확보
+        sysStack.spSet(arBase + 3);
+        // 함수에서 사용하는 메모리 공간의 고유 키값 셋팅 : block number
+        // 만약 이 값이 서로 같은 함수가 존재한다면 서로의 공간을 공유한다.
+        sysStack[arBase+3] = ir.value1;
+
+        /*
+        // lexical level : innerBlock 을 처리하기위한 용도로 현재 쓰이진 않음
+        for (temp = sysStack[arBase+1];
+             sysStack[temp+3] != ir.value2 -1;
+             temp = sysStack[temp]);
+        // innerBlock 을 처리하기 위한 부모 Block Address
+        // 이 또한 내부적으로 linked list 자료구조를 사용
+        sysStack[arBase] = temp;
+        */
+        break;
+      /*
+      case ldp:
+        // 함수 정보 저장용 공간 4칸 확보
+        parms = sysStack.top() + 1;
+        sysStack.spSet(sysStack.top()+4);
+        break;
+      */
       case retv:
-        temp = stack.pop();
+        temp = memStack.pop();
       case ret:
-        stack.spSet(arBase - 1);
-        if (instrBuf[pc].opcode == retv)
-          stack.push(temp);
-        pc = stack[arBase+2] - 1;
-        arBase = stack[arBase+1];
+        /*
+        sysStack.spSet(arBase - 1);
+        if (ir.opcode == retv)
+          sysStack.push(temp);
+        pc = sysStack[arBase+2] - 1;
+        arBase = sysStack[arBase+1];
+        */
+        //memStack.restore();
+        pc = memStack.pop();
+        if (ir.opcode == retv)
+          memStack.push(temp);
         break;
       /*
       case stp:
-        returnAddress = stack[arBase+2] - 1;
-        stack.spSet(arBase - 1);
-        arBase = stack[arBase  1];
+        returnAddress = sysStack[arBase+2] - 1;
+        sysStack.spSet(arBase - 1);
+        arBase = sysStack[arBase  1];
         break;
       case ret:
         pc = returnAddress;
         break;
       */
-      case proc:
-        // value 1: block number(base)
-        // value 2: static level => lexical level (static chain)
-        // 함수에서 사용 할 메모리 공간 확보
-        stack.spSet(arBase + 3);
-        // 함수에서 사용하는 메모리 공간의 고유 키값 셋팅 : block number
-        // 만약 이 값이 서로 같은 함수가 존재한다면 서로의 공간을 공유한다.
-        stack[arBase+3] = instrBuf[pc].value1;
+      case sym:
+        // 함수에서 사용할 메모리 공간 확보
+        sysStack.spSet(sysStack.top() + ir.value2);
+        //ir.value1 // block number
+        //ir.value2 // size
+        break;
 
-        // lexical level : innerBlock 을 처리하기위한 용도로 현재 쓰이진 않음
-        for (temp = stack[arBase+1];
-             stack[temp+3] != instrBuf[pc].value2 -1;
-             temp = stack[temp]);
-        // innerBlock 을 처리하기 위한 부모 Block Address
-        // 이 또한 내부적으로 linked list 자료구조를 사용
-        stack[arBase] = temp;
+      // Arithmetic Logical Unit
+      case add:
+      case sub:
+      case divop:
+      case modop:
+      case mult:
+      case andop:
+      case orop:
+        alu.setReg2(memStack.pop());
+        alu.setReg1(memStack.pop());
+        memStack.push(alu.execute(ir.opcode));
+        break;
+      case neg:
+      case notop:
+      case incop:
+      case decop:
+        alu.setReg1(memStack.pop());
+        memStack.push(alu.execute(ir.opcode));
+        break;
+
+      case lod:
+        memStack.push(sysStack[findAddr(pc)]);
+        break;
+      case lda:
+        memStack.push(findAddr(pc));
+        break;
+      case str:
+        sysStack[findAddr(pc)] = memStack.pop();
+        break;
+      case ldi:
+        if ((memStack.top() <= 0) || (memStack.top() > STACKSIZE))
+          errmsg("execute()", "Illegal ldi instruction ...");
+        temp = memStack.pop();
+        memStack.push(sysStack[temp]);
+        break;
+      case sti:
+        temp = memStack.pop();
+        sysStack[memStack.pop()] = temp;
+        break;
+
+      case ldc:
+        memStack.push(ir.value1);
+        break;
+      case gt:
+        temp = memStack.pop();
+        memStack.push(memStack.pop()>temp);
+        break;
+      case lt:
+        temp = memStack.pop();
+        memStack.push(memStack.pop()<temp);
+        break;
+      case ge:
+        temp = memStack.pop();
+        memStack.push(memStack.pop()>=temp);
+        break;
+      case le:
+        temp = memStack.pop();
+        memStack.push(memStack.pop()<=temp);
+        break;
+      case eq:
+        temp = memStack.pop();
+        memStack.push(memStack.pop()==temp);
+        break;
+      case ne:
+        temp = memStack.pop();
+        memStack.push(memStack.pop()!=temp);
+        break;
+      case ujp:
+        pc = ir.value1 - 1;
+        break;
+      case tjp:
+        if (memStack.pop()) pc = ir.value1 - 1;
+        break;
+      case fjp:
+        if (!memStack.pop()) pc = ir.value1 - 1;
         break;
       case endop:
         pc = -2;
         break;
       case bgn:
-        stack.spSet(stack.top() + instrBuf[pc].value1);
+        sysStack.spSet(sysStack.top() + ir.value1);
         break;
-      /*
-      case ones:
-        stack.push(~stack.pop());
-        break;
-      */
       case nop:
         break;
-      case sym:
-        // 함수에서 사용할 메모리 공간 확보
-        stack.spSet(stack.top() + instrBuf[pc].value2);
-        //instrBuf[pc].value1 // block number
-        //instrBuf[pc].value2 // size
-        break;
-      /* augmented operation code */
-      case incop:
-        temp = stack.pop();
-        stack.push(++temp);
-        break;
-      case decop:
-        temp = stack.pop();
-        stack.push(--temp);
-        break;
-      case dupl:
-        temp = stack.pop();
-        stack.push(temp);
-        stack.push(temp);
-        break;
-      case dump:
-        stack.dump();
-        break;
-      }
+    }
     pc++;
   }
   cout << '\n';
