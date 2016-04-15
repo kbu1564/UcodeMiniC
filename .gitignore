@@ -28,4 +28,11 @@
 *.exe
 *.out
 *.app
+
+# Binary files
 tests/ucode
+ucode-update/ucode
+
+# flex source
+minic/lex.yy.c
+minic/minic
