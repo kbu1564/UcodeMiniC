@@ -66,6 +66,8 @@ int yywrap() {
 int main() {
   enum tsymbol tn;
   while ((tn = yylex())) {
+    if (tn == teof) break;
+
     printf("%s\t%d\t", yytext, tn);
 		if (tn == tident) printf("%s\n", yytext);
 		else printf("%d\n", 0);

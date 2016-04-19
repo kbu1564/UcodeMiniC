@@ -1,6 +1,7 @@
 void main(void) {
-	int a = 0;
-	read(&a);
-	write(a);
+	int i;
+	read(i);
+	i++;
+	write(i);
 }
 
