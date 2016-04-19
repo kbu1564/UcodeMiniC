@@ -1,5 +1,5 @@
 %{
-	/* lex source for Mini C */
+  /* lex source for Mini C */
   #include <stdio.h>
   #include <stdlib.h>
   #include "minic.h"
