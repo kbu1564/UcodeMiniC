@@ -15,6 +15,22 @@
 "return"  return(treturn);
 "while"   return(twhile);
 
+"!"       return(tnot);
+"&"       return(tand);
+"|"       return(tor);
+"*"       return(tmul);
+"%"       return(tmod);
+"/"       return(tdiv);
+"+"       return(tplus);
+"-"       return(tminus);
+
+","       return(tcomma);
+";"       return(tsemicolon);
+
+"="       return(tassign);
+"<"       return(tless);
+">"       return(tgreat);
+
 "=="      return(tequal);
 "!="      return(tnotequ);
 "<="      return(tlesse);
@@ -50,7 +66,9 @@ int yywrap() {
 int main() {
   enum tsymbol tn;
   while ((tn = yylex())) {
-    printf("%s\t%d\n", yytext, tn);
+    printf("%s\t%d\t", yytext, tn);
+		if (tn == tident) printf("%s\n", yytext);
+		else printf("%d\n", 0);
   }
   return 0;
 }
